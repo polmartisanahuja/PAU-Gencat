@@ -13,7 +13,9 @@ def err_magnitude():
 
 	#Computing Signal to Noise (StoN)
 	StoN = (sqrt(n_pix * n_exp) * N_sig) / sqrt(N_sig + N_sky + RN * RN)
+	noise_ctn = 2.5 * log10(1 + 0.02)
 	err_m_obs = 2.5 * log10(1 + 1 / StoN)
+	err_m_obs = sqrt((err_m_obs * err_m_obs) + (noise_ctn * noise_ctn))
 
 	return err_m_obs 
 
@@ -64,8 +66,11 @@ in_sky = in_sky[1:]
 #Loading seds...........................
 sed_list = np.loadtxt(sed_folder + sed_list, dtype = 'string', unpack = True)
 n_sed = len(sed_list) 
-dt = (t.max() - t.min()) / (n_sed - 1)
-t_range = np.arange(t.min(), t.max() + dt, dt )
+
+#dt = (t.max() - t.min()) / (n_sed - 1)
+#t_range = np.arange(t.min(), t.max() + dt, dt )
+dt = 1
+t_range = np.arange(0, 66)
 
 s = {}
 for sed in sed_list: s[sed] = np.loadtxt(sed_folder + sed, unpack = True)
@@ -83,7 +88,7 @@ for n in range(n_gal):
 	s_low = sed_list[s_ind_high - 1]
 	coef_high = (t_range[s_ind_high] - t[n]) / dt 
 	coef_low = 1 - coef_high  
-	
+
 	#Computing in_s................
 	in_s = np.zeros(n_filt + 1)
 	for i in range(n_filt + 1):
