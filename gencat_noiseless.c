@@ -6,11 +6,11 @@
 #include "gennoislesscat.h"
 
 FILE* file_init(char file_name[1000]);
-float interpol(float x1, float x0, float y1, float y0, float x);
-void set_type(float type, float *coef, char *sed1, char *sed2);
+double interpol(double x1, double x0, double y1, double y0, double x);
+void set_type(double type, double *coef, char *sed1, char *sed2);
 void filt_path(char *filt_b, char *filt_a);
-void inter_sed_point(FILE *sed, int i, float *x1, float *x0, float *y1, float *y0, float x, float z);
-int inter_filt_point(FILE *filt, int *error, int i, float *x1, float *x0, float *y1, float *y0, float x);
+void inter_sed_point(FILE *sed, int i, double *x1, double *x0, double *y1, double *y0, double x, double z);
+int inter_filt_point(FILE *filt, int *error, int i, double *x1, double *x0, double *y1, double *y0, double x);
 
 main()
 {
@@ -29,20 +29,20 @@ main()
 	char line[1000];
 
 	int i, N_gal = 0, *error, filt_index, sed_index1, sed_index2, num_gal = 0, num_filt = 0; //index filtr, sed & obj
-	float type; //Real spectral index
-	float *in_r, *in_sed; //in: integral r:filter sed:template
-	float x, *y, *y_sed, *xn, *xn1, *yn, *yn1; 
-	float id, ebv, Mr, z, mi, mag_ab;
-	float *coef;
-	float intro[5], sdss[2], des[6], pau[40], F814, mass[3];
+	double type; //Real spectral index
+	double *in_r, *in_sed; //in: integral r:filter sed:template
+	double x, *y, *y_sed, *xn, *xn1, *yn, *yn1; 
+	double id, ebv, Mr, z, mi, mag_ab;
+	double *coef;
+	double intro[5], sdss[2], des[6], pau[40], F814, mass[3];
 
-	xn = (float*) calloc(3, sizeof(float)); //0:filter 1:sed1 2:sed2
-	xn1 = (float*) calloc(3, sizeof(float)); //0:filter 1:sed1 2:sed2
-	yn = (float*) calloc(3, sizeof(float)); //0:filter 1:sed1 2:sed2
-	yn1 = (float*) calloc(3, sizeof(float)); //0:filter 1:sed1 2:sed2
-	y = (float*) calloc(2, sizeof(float)); //0:filter 1:sed
-	y_sed = (float*) calloc(2, sizeof(float)); //0:sed1 1:sed2
-	coef = (float*) calloc(2, sizeof(float)); //0:sed1 1:sed2
+	xn = (double*) calloc(3, sizeof(double)); //0:filter 1:sed1 2:sed2
+	xn1 = (double*) calloc(3, sizeof(double)); //0:filter 1:sed1 2:sed2
+	yn = (double*) calloc(3, sizeof(double)); //0:filter 1:sed1 2:sed2
+	yn1 = (double*) calloc(3, sizeof(double)); //0:filter 1:sed1 2:sed2
+	y = (double*) calloc(2, sizeof(double)); //0:filter 1:sed
+	y_sed = (double*) calloc(2, sizeof(double)); //0:sed1 1:sed2
+	coef = (double*) calloc(2, sizeof(double)); //0:sed1 1:sed2
 	error = (int*) calloc(1, sizeof(int));
 
 	printf("\n***********************************************\n");
@@ -66,33 +66,31 @@ main()
 	nom_filt = fopen(nom_filt_file, "r"); //apertura arxiu amb noms dels filtres
 
 	//Loop over filters..............................................................................
-	in_r = (float*) calloc(num_filt + 1, sizeof(float));
+	in_r = (double*) calloc(num_filt + 1, sizeof(double));
 	i = 0;
 	do{ 
 		if(i == 0) filt_path(nom_fich_filt_b, nom_filt_seed);
 		else filt_path(nom_fich_filt_b, nom_fich_filt_a);
 		
-		//filt_path(nom_fich_filt_b, nom_fich_filt_a);
-		//printf("%s\n", nom_fich_filt_a);
-		
 		if(i != 0) fprintf(cat,"#%d:%s\n",i + 5, nom_fich_filt_a);
 		
-		//filt = fopen(nom_fich_filt_b , "r"); //obrim l'arxiu del filtre corresponent
 		filt = file_init(nom_fich_filt_b); //obrim l'arxiu del filtre corresponent
 
-		fscanf(filt, "%f %f\n", &xn[0] , &yn[0]); //lectura 2 punts
-		*error = fscanf(filt, "%f %f\n", &xn1[0] , &yn1[0]);
+		fscanf(filt, "%lf %lf\n", &xn[0] , &yn[0]); //lectura 2 punts
+		*error = fscanf(filt, "%lf %lf\n", &xn1[0] , &yn1[0]);
 		x = xn[0]; //x inicial
 		y[0] = yn[0]; //y[0] inicial
 		
 		in_r[i] = 0;
 		while(*error != -1){ //Bucle per integrar sobre tot el filtre
+			//printf("x=%8.8lf y=%8.8lf\n", x, y[0]);
 			in_r[i] += y[0]*(delta/x); //integral filtre
 			x+=delta; //nou punt x
 			
 			*error = inter_filt_point(filt, error, 0, xn1, xn, yn1, yn, x);
 			if(*error != -1) y[0] = interpol(xn1[0], xn[0], yn1[0], yn[0], x);
 		}
+		//printf("in_r[%d] = %8.8lf\n", i, in_r[i]);
 		fclose(filt); //tancament arxiu filtre
 		i++;
 	}while(fscanf(nom_filt, "%s\n", nom_fich_filt_a) != -1);
@@ -109,19 +107,19 @@ main()
 	mock = file_init(cat_in_file);
 	
 	//Loop over objects of mock catalog..............................................................
-	in_sed = (float*) calloc(num_filt + 1, sizeof(float));
-	//while(fscanf(mock, "%f %f %f %f %f %f\n", &id, &mi, &z, &type, &ebv, &Mr) != -1){
-	while(fscanf(mock,"%f ", &intro[0]) != -1){
+	in_sed = (double*) calloc(num_filt + 1, sizeof(double));
+	//while(fscanf(mock, "%lf %lf %lf %lf %lf %lf\n", &id, &mi, &z, &type, &ebv, &Mr) != -1){
+	while(fscanf(mock,"%lf ", &intro[0]) != -1){
 		num_gal++;
 		
-		for(i=1; i<5; i++) fscanf(mock,"%f ",&intro[i]);
-		fscanf(mock,"%f ", &sdss[0]);
-		for(i=0; i<6; i++) fscanf(mock,"%f ",&des[i]);
-		for(i=0; i<40; i++) fscanf(mock,"%f ",&pau[i]);
-		fscanf(mock,"%f ", &F814);
-		fscanf(mock,"%f ", &sdss[1]);
-		for(i=0; i<2; i++) fscanf(mock,"%f ",&mass[i]);
-		fscanf(mock,"%f\n",&mass[2]);
+		for(i=1; i<5; i++) fscanf(mock,"%lf ",&intro[i]);
+		fscanf(mock,"%lf ", &sdss[0]);
+		for(i=0; i<6; i++) fscanf(mock,"%lf ",&des[i]);
+		for(i=0; i<40; i++) fscanf(mock,"%lf ",&pau[i]);
+		fscanf(mock,"%lf ", &F814);
+		fscanf(mock,"%lf ", &sdss[1]);
+		for(i=0; i<2; i++) fscanf(mock,"%lf ",&mass[i]);
+		fscanf(mock,"%lf\n",&mass[2]);
 		
 		//printf("id = %0.0f\n", intro[0]);
 		id = intro[0];
@@ -131,13 +129,13 @@ main()
 		Mr = intro[4];
 		mi = sdss[1];
 		
-		//printf("%f\n", mi);
+		//printf("%lf\n", mi);
 		
 		//Calcular la integral convolució filtres-SED i filtres sols.................................
 		nom_filt = fopen(nom_filt_file, "r"); //apertura arxiu amb noms dels filtres
 			
 		set_type(type, coef, nom_fich_sed1 , nom_fich_sed2);
-		//printf("%f %f\n", coef[0], coef[1]); 
+		//printf("%lf %lf\n", coef[0], coef[1]); 
 		//Loop over filters..........................................................................
 		i = 0;
 		do{ 
@@ -151,8 +149,8 @@ main()
 			
 			filt = file_init(nom_fich_filt_b); //obrim l'arxiu del filtre corresponent
 			//printf("%s\n", nom_fich_filt_b);
-			fscanf(filt, "%f %f\n", &xn[0] , &yn[0]); //lectura 2 punts
-			*error = fscanf(filt, "%f %f\n", &xn1[0] , &yn1[0]);
+			fscanf(filt, "%lf %lf\n", &xn[0] , &yn[0]); //lectura 2 punts
+			*error = fscanf(filt, "%lf %lf\n", &xn1[0] , &yn1[0]);
 			x = xn[0]; //x inicial
 			y[0] = yn[0]; //y[0] inicial
 			
@@ -168,6 +166,8 @@ main()
 				y_sed[1] = interpol(xn1[2], xn[2], yn1[2], yn[2], x);
 		
 				y[1] = coef[0]*y_sed[0] + coef[1]*y_sed[1]; //Combinació lineal seds
+				//printf("%lf %lf\n",coef[1], coef[0]);
+				//printf("x=%8.8lf y=%8.8lf\n", x, y[1]);
 				in_sed[i] += y[0]*y[1]*(x*delta); //integral filtre i sed
 				x += delta; //nou punt x
 				
@@ -177,7 +177,7 @@ main()
 				
 			}
 			fclose(filt), fclose(sed1), fclose(sed2);
-			//printf("%f ", in_sed[i]);	
+			//printf("in_sed[%d] = %8.8lf\n", i, in_sed[i]);	
 			i++;
 		}while(fscanf(nom_filt, "%s\n", nom_fich_filt_a) != -1);
 		
@@ -185,7 +185,7 @@ main()
 
 		//Printing catalog with all magnitudes in different filters....................................
 		fprintf(cat, "%d ", (int)id);
-		printf("\tProcess completed:\t%2.2f%%\r", 100*((float)num_gal/(float)N_gal));
+		printf("\tProcess completed:\t%2.2f%%\r", 100*((double)num_gal/(double)N_gal));
 		fflush(stdout);
 
 		for(i=1; i <= num_filt; i++){
@@ -243,7 +243,7 @@ void filt_path(char *filt_b, char *filt_a)
 	//printf("")
 }
 	
-void set_type(float type, float *coef, char *sed1, char *sed2)
+void set_type(double type, double *coef, char *sed1, char *sed2)
 {
 	/*Gives values to the "coef" variable acording to "type" variable. It also set paths for
 	both templates that represent the correspondent spectral type.*/
@@ -260,34 +260,34 @@ void set_type(float type, float *coef, char *sed1, char *sed2)
 		strcpy(sed1,nom_sed_folder);
 		strcat(sed1, nom_fich_sed1_a);
 		sed_index1+=1;
-		coef[0]=(float)1-type+sed_index1;
+		coef[0]=(double)1-type+sed_index1;
 	}
 	if(sed_index1 != 65) fscanf(nom_sed, "%s\n", nom_fich_sed2_a); //lectura index i nom del primer sed. Cal arreglar el 65 que es el nombre de seds del FJC.
 	else strcpy(nom_fich_sed2_a, nom_fich_sed1_a);
 	strcpy(sed2,nom_sed_folder);
 	strcat(sed2, nom_fich_sed2_a);
-	coef[1]=(float)type-sed_index1;
+	coef[1]=(double)type-sed_index1;
 	fclose(nom_sed);
 	
 	//printf("sed_index1=%d\n", sed_index1);
 	//printf("sed1=%s\n", nom_fich_sed1_a);
 	//printf("sed2=%s\n", nom_fich_sed2_a);
-	//printf("coef[0]=%f coef[1]=%f\n", coef[0], coef[1]);
+	//printf("coef[0]=%lf coef[1]=%lf\n", coef[0], coef[1]);
 }
 
-void inter_sed_point(FILE *sed, int i, float *x1, float *x0, float *y1, float *y0, float x, float z)
+void inter_sed_point(FILE *sed, int i, double *x1, double *x0, double *y1, double *y0, double x, double z)
 {
 	/*Finds two points in the "sed" file that enclose the point x, then changes pointers values x & y for
 	both 0 & 1.*/
 	
 	while(x > x1[i]){ 
 		y0[i] = y1[i], x0[i] = x1[i];
-		fscanf(sed, "%f %f\n", &x1[i] , &y1[i]);
+		fscanf(sed, "%lf %lf\n", &x1[i] , &y1[i]);
 		x1[i] = x1[i]*(1+z); //Wavelength Redshifted
 	}
 }
 
-int inter_filt_point(FILE *filt, int *error, int i, float *x1, float *x0, float *y1, float *y0, float x)
+int inter_filt_point(FILE *filt, int *error, int i, double *x1, double *x0, double *y1, double *y0, double x)
 {
 	/*Finds two points in the "filt" file that enclose the point x, then changes pointers values x & y for
 	both 0 & 1. If the end of filter is found, then "error" pointer tooks value -1 and loop is
@@ -295,16 +295,16 @@ int inter_filt_point(FILE *filt, int *error, int i, float *x1, float *x0, float 
 	
 	while((x > x1[i]) && (*error != -1)){ 
 		y0[i] = y1[i], x0[i] = x1[i];
-		*error = fscanf(filt, "%f %f\n", &x1[i] , &y1[i]);
+		*error = fscanf(filt, "%lf %lf\n", &x1[i] , &y1[i]);
 	}
 	return *error;
 }
 
-float interpol(float x1, float x0, float y1, float y0, float x)
+double interpol(double x1, double x0, double y1, double y0, double x)
 {
 	/*Returns the linearly interpolated value y between two points in the plane (x, y)*/
 
-	float m, n;
+	double m, n;
 	
 	m=(y1-y0)/(x1-x0);
 	n=y0-m*x0;

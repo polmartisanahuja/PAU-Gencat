@@ -6,20 +6,20 @@
 
 //FUNCTIONS DECLARATION..............................................................................................................
 FILE *file_init(char file_name[1000]);
-float mag_err(int i, float t_exp, float *in_r, float *in_cel, float mag_ab);
-float rnd_gauss();
-float interpol(float x1, float x0, float y1, float y0, float x);
-void mock_noise(int num_filt, float *in_r, float *in_cel);
-void integrals(float *in_r, float *in_cel);
+double mag_err(int i, double t_exp, double *in_r, double *in_cel, double mag_ab);
+double rnd_gauss();
+double interpol(double x1, double x0, double y1, double y0, double x);
+void mock_noise(int num_filt, double *in_r, double *in_cel);
+void integrals(double *in_r, double *in_cel);
 void exp_times_reader(int num_filt);
 
-float magnitude;
-float *t_exp;
+double magnitude;
+double *t_exp;
 
 //Derived instrument parameters
-float tel_surface; //Area del telescopi
-float pix_size; //Tamany pixel en arcsec^2
-float n_pix; //Número de pixels dins l'apertura
+double tel_surface; //Area del telescopi
+double pix_size; //Tamany pixel en arcsec^2
+double n_pix; //Número de pixels dins l'apertura
 	
 main()
 {
@@ -31,7 +31,7 @@ main()
 
 	int i, filt_index, num_filt = 0; 
 
-	float *in_r, *in_cel;
+	double *in_r, *in_cel;
 	
 	tel_surface = 3.145926*(D_tel/2)*(D_tel/2); //Area del telescopi
 	pix_size = scale*scale; //Tamany pixel en arcsec^2
@@ -44,9 +44,9 @@ main()
 
 	//Set memory for pointers.........................................................................................................
 	//Labels are filters
-	in_r = (float*) calloc(num_filt, sizeof(float)); 
-	in_cel = (float*) calloc(num_filt, sizeof(float));
-	t_exp = (float*) calloc(num_filt, sizeof(float));
+	in_r = (double*) calloc(num_filt, sizeof(double)); 
+	in_cel = (double*) calloc(num_filt, sizeof(double));
+	t_exp = (double*) calloc(num_filt, sizeof(double));
 	
 	printf("\n***********************************************\n");
 	printf("*                                             *\n");
@@ -71,23 +71,23 @@ main()
 }
 
 //FUNCTIONS DEFINITION..................................................................................................................
-void integrals(float *in_r, float *in_cel)
+void integrals(double *in_r, double *in_cel)
 {
 	/*This rutine set all the values of the in_r, in_cel, amp_filt, max_filt, lam_filt arrays*/
 	
 	FILE *cat, *nom_filt, *filt, *sed;
 	int k, error, filt_index;
 	char nom_fich_filt_a[1000], nom_fich_filt_b[1000];
-	float x, *y, *y_sed; 
-	float *xn, *xn1, *yn, *yn1;
+	double x, *y, *y_sed; 
+	double *xn, *xn1, *yn, *yn1;
 	
-	xn=(float*) calloc(3, sizeof(float)); /*2 parells de valors tan dels filtres (0) com del sed (1) per interpolar entre ells. 
-	El 0 també es farà servir per trobar la mag limit corresponent. xn son els primers punts i xn1 els seguents*/
-	xn1=(float*) calloc(3, sizeof(float));
-	yn=(float*) calloc(3, sizeof(float));
-	yn1=(float*) calloc(3, sizeof(float));
-	y=(float*) calloc(2, sizeof(float)); //El 0 és pel filtre i el 1 pel sed.
-	y_sed=(float*) calloc(2, sizeof(float)); 
+	xn=(double*) calloc(3, sizeof(double)); /*2 parells de valors tan dels filtres (0) com del sed (1) per interpolar entre ells. 
+	El 0 tambe es faa servir per trobar la mag limit corresponent. xn son els primers punts i xn1 els seguents*/
+	xn1=(double*) calloc(3, sizeof(double));
+	yn=(double*) calloc(3, sizeof(double));
+	yn1=(double*) calloc(3, sizeof(double));
+	y=(double*) calloc(2, sizeof(double)); //El 0 és pel filtre i el 1 pel sed.
+	y_sed=(double*) calloc(2, sizeof(double)); 
 	
 	cat = fopen(cat_out_file , "w"); //Creem el arxiu on anirà el cataleg amb el tall en error de magnituds
 	fprintf(cat,"#Fields:\n#1:ID\n");
@@ -106,12 +106,12 @@ void integrals(float *in_r, float *in_cel)
 		fprintf(cat,"#%d:err_m_obs %s\n",k+2, nom_fich_filt_a);
 		
 		filt=file_init(nom_fich_filt_b); //obrim l'arxiu del filtre corresponent
-		fscanf(filt, "%f %f\n", &xn[0] , &yn[0]); //lectura 2 punts
-		error=fscanf(filt, "%f %f\n", &xn1[0] , &yn1[0]);
+		fscanf(filt, "%lf %lf\n", &xn[0] , &yn[0]); //lectura 2 punts
+		error=fscanf(filt, "%lf %lf\n", &xn1[0] , &yn1[0]);
 			
 		sed=fopen(sky_file , "r"); 
-		fscanf(sed, "%f %f\n", &xn[1] , &yn[1]);
-		fscanf(sed, "%f %f\n", &xn1[1] , &yn1[1]);
+		fscanf(sed, "%lf %lf\n", &xn[1] , &yn[1]);
+		fscanf(sed, "%lf %lf\n", &xn1[1] , &yn1[1]);
 		
 		x=xn[0]; //x inicial
 		y[0]=yn[0]; //y[0] inicial
@@ -125,7 +125,7 @@ void integrals(float *in_r, float *in_cel)
 			{
 				yn[1]=yn1[1];
 				xn[1]=xn1[1];
-				fscanf(sed, "%f %f\n", &xn1[1] , &yn1[1]);
+				fscanf(sed, "%lf %lf\n", &xn1[1] , &yn1[1]);
 			} 
 			y[1]=interpol(xn1[1], xn[1], yn1[1], yn[1], x);
 					
@@ -137,7 +137,7 @@ void integrals(float *in_r, float *in_cel)
 			{
 				yn[0]=yn1[0];
 				xn[0]=xn1[0];
-				error=fscanf(filt, "%f %f\n", &xn1[0] , &yn1[0]);
+				error=fscanf(filt, "%lf %lf\n", &xn1[0] , &yn1[0]);
 			}
 			if(error != -1) y[0]=interpol(xn1[0], xn[0], yn1[0], yn[0], x);
 		}
@@ -153,34 +153,34 @@ void integrals(float *in_r, float *in_cel)
 
 void exp_times_reader(int num_filt)
 {
-	/*Reads exposure times from a file and then fills the t_exp[] array with them.*/	
+	/*Reads exposure times from a file and then fills the t_exp[] 
+	array with them.*/	
 
 	FILE *temps_exp;
 	int i;
 	
 	temps_exp=fopen(temps_exp_file, "r"); 
-	for(i=0; i < num_filt; i++) fscanf(temps_exp, "%f\n", &t_exp[i]);
+	for(i=0; i < num_filt; i++) fscanf(temps_exp, "%lf\n", &t_exp[i]);
 	printf("Hello\n");	
 	fclose(temps_exp);
 }
 
-void mock_noise(int num_filt, float *in_r, float *in_cel)
+void mock_noise(int num_filt, double *in_r, double *in_cel)
 {
 	/*This routine takes the noisless mock catalog and convert it into 
 	a noiseful one. Noise is generated through a gauss distribution.
-	It also set the values of the mag_lim array. Filters with a err_mag bigger than
-	sigma_lim will have a magnitude value -99. and an err_mag = 0*/
+	It also set the values of the mag_lim array. Filters with a 
+	err_mag bigger than sigma_lim will have a magnitude value -99. 
+	and an err_mag = 0*/
 	
 	FILE *mock, *cat;
 	int i, num_gal, N_gal = 0, n_gal = 0;
-	float r, z, type, other1, other2, mag_ab, sigma_mag_ab;
+	double r, z, type, other1, other2, mag_ab, sigma_mag_ab;
 	char let = 'a';
 	int error, pos;
 	
 	printf("   Computing number of objects in mock...\n");
-	
 	cat = fopen(cat_out_file, "a");
-	
 	pos = 2 * num_filt + 1;
 	
 	fprintf(cat,"#%d:z_true\n#%d:m_obs prior\n#%d:template\n#%d:E(B-V)\n#%d:Mr\n", pos + 1, pos + 2, pos + 3, pos + 4, pos + 5, pos + 6 );
@@ -192,24 +192,21 @@ void mock_noise(int num_filt, float *in_r, float *in_cel)
 	printf("   Total number of obj.:\t%d\n", N_gal);
 	printf("   Computing observed magnitudes for all objects...\n");
 	mock = file_init(cat_in_file); //Initialitzation of the noiseless cat
-	while(fscanf(mock, "%d", &num_gal) != -1)
-	{
+	while(fscanf(mock, "%d", &num_gal) != -1){
 		n_gal++;
-		//printf("   Process completed:\t%2.2f%%\r", 100*((float)n_gal/(float)N_gal));
-		//fflush(stdout);
+		printf("   Process completed:\t%2.2f%%\r", 100*((double)n_gal/(double)N_gal));
+		fflush(stdout);
 		
-		for(i=0; i < num_filt; i++)
-		{
-			fscanf(mock, " %f", &mag_ab);
+		for(i=0; i < num_filt; i++){
+			fscanf(mock, " %lf", &mag_ab);
 			sigma_mag_ab = mag_err(i,t_exp[i], in_r, in_cel, mag_ab);
-
 			mag_ab = magnitude;
 			 
 			if(i==0) fprintf(cat, "%d ", num_gal);
 			fprintf(cat, " %4.4f %4.4f", mag_ab, sigma_mag_ab);
 			if(i == num_filt-1) {
-				fscanf(mock, " %f %f", &z, &type);
-				fprintf(cat, " %4.4f %2.2f\n", z, type); //(FOR LEPHARE AND BPZ)			
+				fscanf(mock, " %lf %lf", &z, &type);
+				fprintf(cat, " %4.4f %2.2f\n", z, type); 
 			}
 		}
 	}
@@ -219,9 +216,9 @@ void mock_noise(int num_filt, float *in_r, float *in_cel)
 
 FILE *file_init(char file_name[100])
 {
-	/*Returns a pointer to the file "in" which has been initialized to the first 
-	row where data is. This means that all headers of the file that start with # 
-	are avoided*/
+	/*Returns a pointer to the file "in" which has been initialized
+	to the first row where data is. This means that all headers of
+	the file that start with # are avoided*/
 	
 	FILE *in;
 	int N, i;
@@ -250,15 +247,16 @@ FILE *file_init(char file_name[100])
 	return in;
 }
 
-float mag_err(int i, float t_exp, float *in_r, float *in_cel, float mag_ab)
+double mag_err(int i, double t_exp, double *in_r, double *in_cel, double mag_ab)
 {
-	//Computes the error of the magnitude for a given magnitude, 
-	//the exposure time in some band, the integral of the band throughput
-	//and the inegral of the band throughput multiplied by the sky brigthness
+	/*Computes the error of the magnitude for a given magnitude, 
+	the exposure time in some band, the integral of the band
+	throughput and the inegral of the band throughput multiplied
+	by the sky brigthness*/
 
-	float N_sig, N_cel, StoN;
-	float sigma_mag_ab, noise_ctn;
-	float r;			
+	double N_sig, N_cel, StoN;
+	double sigma_mag_ab, noise_ctn;
+	double r;			
 
 	//Computing photons number
 	N_sig = (3631.0*1.51*pow(10, 7)*pow(10,-0.4*mag_ab)*in_r[i]*t_exp*tel_surface)/n_pix; //object's photons per pixel
@@ -277,14 +275,14 @@ float mag_err(int i, float t_exp, float *in_r, float *in_cel, float mag_ab)
 	return sigma_mag_ab;
 }
 
-float rnd_gauss()
+double rnd_gauss()
 {
 	/*Returns a random value from a normal distribution*/
 
-	float r1, r2, r;
+	double r1, r2, r;
 	
-	r1 = (float)rand()/RAND_MAX;//Generador destribucio gaussiana
-	r2 = (float)rand()/RAND_MAX;
+	r1 = (double)rand()/RAND_MAX;//Generador destribucio gaussiana
+	r2 = (double)rand()/RAND_MAX;
 	r = sqrt(-2*log(r1))*cos(2*3.145926*r2);
 	r = r*preci;
 	r = (ceil(r))/preci;
@@ -292,11 +290,12 @@ float rnd_gauss()
 	return r;
 }
 
-float interpol(float x1, float x0, float y1, float y0, float x)
+double interpol(double x1, double x0, double y1, double y0, double x)
 {
-	/*Returns the linearly interpolated y between two points in the plane*/
+	/*Returns the linearly interpolated y between two points 
+	in the plane*/
 
-	float m, n;
+	double m, n;
 	
 	m=(y1-y0)/(x1-x0);
 	n=y0-m*x0;

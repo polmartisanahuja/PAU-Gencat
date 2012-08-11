@@ -49,7 +49,10 @@ for i in range(n_filt + 1):
 
 	#Interpolation
 	y_r[filt] = sp.interpolate.interp1d(R[0], R[1])(x[filt]) 
+	#print x[filt], y_r[filt]
 	in_r[i] = (y_r[filt] / x[filt]).sum() * dx
+
+#print in_r
 
 in_r0 = in_r[0]
 in_r = in_r[1:]
@@ -58,6 +61,7 @@ in_r = in_r[1:]
 SKY = np.loadtxt(sky_file, unpack = True) 
 in_sky = np.zeros(n_filt + 1)
 for i in range(n_filt + 1):
+	filt = filt_list[i]
 	y_sky = sp.interpolate.interp1d(SKY[0], SKY[1])(x[filt])
 	in_sky[i] = (y_sky * y_r[filt]).sum() * dx
 
@@ -86,15 +90,15 @@ for n in range(n_gal):
 	s_ind_high = np.searchsorted(t_range, t[n])
 	s_high = sed_list[s_ind_high]
 	s_low = sed_list[s_ind_high - 1]
-	coef_high = (t_range[s_ind_high] - t[n]) / dt 
-	coef_low = 1 - coef_high  
+	coef_low = (t_range[s_ind_high] - t[n]) / dt 
+	coef_high = 1 - coef_low  
 
 	#Computing in_s................
 	in_s = np.zeros(n_filt + 1)
 	for i in range(n_filt + 1):
 		filt = filt_list[i]
 		y_s_low = sp.interpolate.interp1d(s[s_low][0] * (1 + z[n]), s[s_low][1])(x[filt]) 
-		y_s_high = sp.interpolate.interp1d(s[s_low][0] * (1 + z[n]), s[s_low][1])(x[filt]) 
+		y_s_high = sp.interpolate.interp1d(s[s_high][0] * (1 + z[n]), s[s_high][1])(x[filt]) 
 		y_s = coef_high * y_s_high + coef_low * y_s_low
 		in_s[i] = (y_s * y_r[filt] * x[filt]).sum() * dx
 		
