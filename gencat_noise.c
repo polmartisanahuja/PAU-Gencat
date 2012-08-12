@@ -33,7 +33,7 @@ main()
 
 	double *in_r, *in_cel;
 	
-	tel_surface = 3.145926*(D_tel/2)*(D_tel/2); //Area del telescopi
+	tel_surface = acos(-1)*(D_tel/2)*(D_tel/2); //Area del telescopi
 	pix_size = scale*scale; //Tamany pixel en arcsec^2
 	n_pix = aperture/pix_size; //Número de pixels dins l'apertura
 
@@ -149,6 +149,7 @@ void integrals(double *in_r, double *in_cel)
 	}
 	fclose(nom_filt);
 	fclose(cat);
+	printf("%8.8f\n",in_cel[0]);
 }
 
 void exp_times_reader(int num_filt)
@@ -161,7 +162,6 @@ void exp_times_reader(int num_filt)
 	
 	temps_exp=fopen(temps_exp_file, "r"); 
 	for(i=0; i < num_filt; i++) fscanf(temps_exp, "%lf\n", &t_exp[i]);
-	printf("Hello\n");	
 	fclose(temps_exp);
 }
 

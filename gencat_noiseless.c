@@ -83,14 +83,12 @@ main()
 		
 		in_r[i] = 0;
 		while(*error != -1){ //Bucle per integrar sobre tot el filtre
-			//printf("x=%8.8lf y=%8.8lf\n", x, y[0]);
 			in_r[i] += y[0]*(delta/x); //integral filtre
 			x+=delta; //nou punt x
 			
 			*error = inter_filt_point(filt, error, 0, xn1, xn, yn1, yn, x);
 			if(*error != -1) y[0] = interpol(xn1[0], xn[0], yn1[0], yn[0], x);
 		}
-		//printf("in_r[%d] = %8.8lf\n", i, in_r[i]);
 		fclose(filt); //tancament arxiu filtre
 		i++;
 	}while(fscanf(nom_filt, "%s\n", nom_fich_filt_a) != -1);
@@ -121,7 +119,6 @@ main()
 		for(i=0; i<2; i++) fscanf(mock,"%lf ",&mass[i]);
 		fscanf(mock,"%lf\n",&mass[2]);
 		
-		//printf("id = %0.0f\n", intro[0]);
 		id = intro[0];
 		z = intro[1];
 		type = intro[2];
@@ -129,13 +126,10 @@ main()
 		Mr = intro[4];
 		mi = sdss[1];
 		
-		//printf("%lf\n", mi);
-		
 		//Calcular la integral convolució filtres-SED i filtres sols.................................
 		nom_filt = fopen(nom_filt_file, "r"); //apertura arxiu amb noms dels filtres
 			
 		set_type(type, coef, nom_fich_sed1 , nom_fich_sed2);
-		//printf("%lf %lf\n", coef[0], coef[1]); 
 		//Loop over filters..........................................................................
 		i = 0;
 		do{ 
@@ -144,11 +138,9 @@ main()
 			
 			sed1 = fopen(nom_fich_sed1 , "r");
 			sed2 = fopen(nom_fich_sed2 , "r");
-			//printf("%s %s\n", nom_fich_sed1, nom_fich_sed2);
 			xn1[1] = 0, xn1[2] = 0; //Forcing SEDs to start at wavelenght 0 
 			
 			filt = file_init(nom_fich_filt_b); //obrim l'arxiu del filtre corresponent
-			//printf("%s\n", nom_fich_filt_b);
 			fscanf(filt, "%lf %lf\n", &xn[0] , &yn[0]); //lectura 2 punts
 			*error = fscanf(filt, "%lf %lf\n", &xn1[0] , &yn1[0]);
 			x = xn[0]; //x inicial
@@ -166,8 +158,6 @@ main()
 				y_sed[1] = interpol(xn1[2], xn[2], yn1[2], yn[2], x);
 		
 				y[1] = coef[0]*y_sed[0] + coef[1]*y_sed[1]; //Combinació lineal seds
-				//printf("%lf %lf\n",coef[1], coef[0]);
-				//printf("x=%8.8lf y=%8.8lf\n", x, y[1]);
 				in_sed[i] += y[0]*y[1]*(x*delta); //integral filtre i sed
 				x += delta; //nou punt x
 				
@@ -177,7 +167,6 @@ main()
 				
 			}
 			fclose(filt), fclose(sed1), fclose(sed2);
-			//printf("in_sed[%d] = %8.8lf\n", i, in_sed[i]);	
 			i++;
 		}while(fscanf(nom_filt, "%s\n", nom_fich_filt_a) != -1);
 		
@@ -239,8 +228,6 @@ void filt_path(char *filt_b, char *filt_a)
 	
 	strcpy(filt_b,nom_filt_folder);
 	strcat(filt_b, filt_a);
-	
-	//printf("")
 }
 	
 void set_type(double type, double *coef, char *sed1, char *sed2)
@@ -268,11 +255,6 @@ void set_type(double type, double *coef, char *sed1, char *sed2)
 	strcat(sed2, nom_fich_sed2_a);
 	coef[1]=(double)type-sed_index1;
 	fclose(nom_sed);
-	
-	//printf("sed_index1=%d\n", sed_index1);
-	//printf("sed1=%s\n", nom_fich_sed1_a);
-	//printf("sed2=%s\n", nom_fich_sed2_a);
-	//printf("coef[0]=%lf coef[1]=%lf\n", coef[0], coef[1]);
 }
 
 void inter_sed_point(FILE *sed, int i, double *x1, double *x0, double *y1, double *y0, double x, double z)

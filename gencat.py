@@ -49,10 +49,7 @@ for i in range(n_filt + 1):
 
 	#Interpolation
 	y_r[filt] = sp.interpolate.interp1d(R[0], R[1])(x[filt]) 
-	#print x[filt], y_r[filt]
 	in_r[i] = (y_r[filt] / x[filt]).sum() * dx
-
-#print in_r
 
 in_r0 = in_r[0]
 in_r = in_r[1:]

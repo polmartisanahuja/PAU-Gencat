@@ -1,6 +1,8 @@
 *.py[co]
 .DS_Store
 parameters.pyc
+.parameters.py.swp
+.gencat.py.swp
 
 # Packages
 *.egg
