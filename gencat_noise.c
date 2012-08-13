@@ -100,6 +100,7 @@ void integrals(double *in_r, double *in_cel)
 	{
 		strcpy(nom_fich_filt_b,nom_filt_folder);
 		strcat(nom_fich_filt_b, nom_fich_filt_a);
+		strcat(nom_fich_filt_b, ".res");
 
 		fprintf(cat,"#%d:m_obs %s\n",k+2, nom_fich_filt_a);
 		k++;

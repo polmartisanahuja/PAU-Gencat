@@ -228,6 +228,7 @@ void filt_path(char *filt_b, char *filt_a)
 	
 	strcpy(filt_b,nom_filt_folder);
 	strcat(filt_b, filt_a);
+	strcat(filt_b, ".res");
 }
 	
 void set_type(double type, double *coef, char *sed1, char *sed2)

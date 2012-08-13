@@ -3,13 +3,14 @@ from math import *
 import scipy as sp
 import scipy.interpolate
 from parameters import *
+from gen_texp import *
 
 #Functions.............................
 def err_magnitude():
 
 	#Computing photons number
-	N_sig = (3631.0 * 1.51 * pow(10, 7) * pow(10,-0.4 * m) * in_r[i] * t_exp[i] * tel_surface) / n_pix #object photons per pixel
-	N_sky = in_sky[i] * t_exp[i] * tel_surface * pix_size #sky photons per pixel
+	N_sig = (3631.0 * 1.51 * pow(10, 7) * pow(10,-0.4 * m) * in_r[i] * texp[i] * tel_surface) / n_pix #object photons per pixel
+	N_sky = in_sky[i] * texp[i] * tel_surface * pix_size #sky photons per pixel
 
 	#Computing Signal to Noise (StoN)
 	StoN = (sqrt(n_pix * n_exp) * N_sig) / sqrt(N_sig + N_sky + RN * RN)
@@ -29,10 +30,10 @@ t = cat[3]
 n_gal = len(m_ref)
 
 #Loading exposure times................
-t_exp = np.loadtxt(exp_t_file, unpack = True)
+#t_exp = np.loadtxt(exp_t_file, unpack = True)
 
 #Loading filters....................... 
-filt_list = np.loadtxt(filt_folder + filt_list, dtype = 'string', unpack = True)
+filt_list = np.loadtxt(filt_folder + filt_names_file, dtype = 'string', unpack = True)
 n_filt = len(filt_list)
 filt_list = np.hstack(([ref_filt], filt_list))
 
@@ -42,7 +43,7 @@ x = {}
 in_r = np.zeros(n_filt + 1)
 for i in range(n_filt + 1): 
 	filt = filt_list[i]
-	R = np.loadtxt(filt_folder + filt, unpack = True)
+	R = np.loadtxt(filt_folder + filt + ".res", unpack = True)
 
 	#Defining lambda range
 	x[filt] = np.arange(R[0].min(), R[0].max(), dx)
