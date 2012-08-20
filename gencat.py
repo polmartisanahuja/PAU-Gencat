@@ -1,9 +1,10 @@
+import sys
 import numpy as np
 from math import *
 import scipy as sp
 import scipy.interpolate
 from parameters import *
-from gen_texp import *
+#from gen_texp import *
 
 #Functions.............................
 def err_magnitude():
@@ -14,8 +15,12 @@ def err_magnitude():
 
 	#Computing Signal to Noise (StoN)
 	StoN = (sqrt(n_pix * n_exp) * N_sig) / sqrt(N_sig + N_sky + RN * RN)
-	noise_ctn = 2.5 * log10(1 + 0.02)
+
+	#Translating from S/N to magnitude uncertainty
 	err_m_obs = 2.5 * log10(1 + 1 / StoN)
+
+	#Inserting extra noise to simulate calibration errors
+	noise_ctn = 2.5 * log10(1 + 0.02)
 	err_m_obs = sqrt((err_m_obs * err_m_obs) + (noise_ctn * noise_ctn))
 
 	return err_m_obs 
@@ -30,7 +35,7 @@ t = cat[3]
 n_gal = len(m_ref)
 
 #Loading exposure times................
-#t_exp = np.loadtxt(exp_t_file, unpack = True)
+texp = np.loadtxt(texp_file, unpack = True)
 
 #Loading filters....................... 
 filt_list = np.loadtxt(filt_folder + filt_names_file, dtype = 'string', unpack = True)
@@ -81,7 +86,10 @@ f_noiseless = open(f_noiseless_file, "w")
 f_noisely = open(f_noisely_file, "w") 
 
 #Iterating over all the galaxies
+print "# galaxies =", n_gal
 for n in range(n_gal):
+	sys.stdout.write("\r\tComplet: %2.2f%%" % (100 * float(n) / float(n_gal)))
+	sys.stdout.flush()
 	f_noiseless.write("%d " % id[n])
 	f_noisely.write("%d " % id[n])
 
@@ -105,8 +113,11 @@ for n in range(n_gal):
 
 	#Generating magnitudes.........
 	for i in range(n_filt):
+
+		#Computing true magnitudes
 		m = m_ref[n] + 2.5 * (log10(in_s0) + log10(in_r[i]) - log10(in_r0) - log10(in_s[i])) 
 				
+		#Computing observed magnitudes: adding gaussian noise of sigma = err_m_obs
 		err_m_obs = err_magnitude()
 		rn = np.random.normal()
 		m_obs = m + rn * err_m_obs	
