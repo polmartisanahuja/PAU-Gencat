@@ -4,7 +4,7 @@ from math import *
 import scipy as sp
 import scipy.interpolate
 from parameters import *
-#from gen_texp import *
+from gen_texp import *
 
 #Functions.............................
 def err_magnitude():
@@ -25,6 +25,50 @@ def err_magnitude():
 
 	return err_m_obs 
 
+def noiseless_test():
+
+	print "\nNoiseless test:"
+
+	f_noiseless_test = open("noiseless_test.cat", "r") 
+	f_noiseless = open(f_noiseless_file, "r") 
+	
+	for test in f_noiseless_test:
+		test = np.array(test.split(), dtype = 'string')	
+		cat = np.array(f_noiseless.readline().split(), dtype = 'string')
+		for i in range(1, len(test) - 2):
+			if(test[i] != cat[i]):
+				print "Failed"
+				print "Test value %s is different from %s" % (test[i], cat[i])
+				return
+		
+	f_noiseless_test.close()
+	f_noiseless.close()
+
+	print "Ok"
+	return
+
+def noisely_test():
+
+	print "\nNoisely test:"
+
+	f_noisely_test = open("noisely_test.cat", "r") 
+	f_noisely = open(f_noisely_file, "r") 
+
+	for test in f_noisely_test:
+		test = np.array(test.split(), dtype = 'string')	
+		cat = np.array(f_noisely.readline().split(), dtype = 'string')
+		for i in range(2, len(test) - 2, 2):
+			if(test[i] != cat[i]):
+				print "Failed"
+				print "Test value %s is different from %s" % (test[i], cat[i])
+				return
+
+	f_noisely_test.close()
+	f_noisely.close()
+
+	print "Ok"
+	return
+
 #Loading input catalog file.............
 cat = np.loadtxt(incat_file + incat_file_extention, usecols = (index_id, index_m, index_z, index_t), unpack = 'True')
 
@@ -35,12 +79,13 @@ t = cat[3]
 n_gal = len(m_ref)
 
 #Loading exposure times................
-texp = np.loadtxt(texp_file, unpack = True)
+#texp = np.loadtxt(texp_file, unpack = True)
 
 #Loading filters....................... 
 filt_list = np.loadtxt(filt_folder + filt_names_file, dtype = 'string', unpack = True)
 n_filt = len(filt_list)
 filt_list = np.hstack(([ref_filt], filt_list))
+#rn = np.random.normal(size = n_filt) #This is a TEST, don't use
 
 #Computing in_r.........................
 y_r = {}
@@ -121,6 +166,7 @@ for n in range(n_gal):
 		err_m_obs = err_magnitude()
 		rn = np.random.normal()
 		m_obs = m + rn * err_m_obs	
+		#m_obs = m + rn[i] * err_m_obs	
 
 		f_noiseless.write("%4.4f " % m)
 		f_noisely.write("%4.4f %4.4f " % (m_obs, err_m_obs))
@@ -130,3 +176,7 @@ for n in range(n_gal):
 
 f_noiseless.close()
 f_noisely.close()
+
+#Tests.................................
+noiseless_test()
+noisely_test()
