@@ -54,7 +54,7 @@ def noiseless_test():
 
 def noisy_test():
 
-	print "\nNoisely test:"
+	print "\nNoisy test:"
 
 	f_noisy_test = open("noisy_test.cat", "r") 
 	f_noisy = open(f_noisy_file, "r") 
