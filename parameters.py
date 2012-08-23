@@ -4,7 +4,7 @@ from numpy import pi
 incat_file = "mock.r255.PAU.a010.s12.110521_reduced"
 incat_file_extention = ".dat"
 f_noiseless_file = incat_file + "_noiseless.cat"
-f_noisely_file = incat_file + "_noisely.cat"
+f_noisy_file = incat_file + "_noisy.cat"
 
 sed_folder = "./CE_NEW/"
 sed_list = "CE_NEW_MOD.txt"

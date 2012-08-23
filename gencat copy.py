@@ -7,28 +7,23 @@ from parameters import *
 from gen_texp import *
 
 #Functions.............................
-def err_magnitude(m):
+def err_magnitude():
 
-	#Computing photons number per pixel
-	N_sig = (3631.0 * 1.51 * pow(10, 7) * np.power(10,-0.4 * m) * in_r * texp * tel_surface)/ n_pix #object photons per pixel
-	N_sky = in_sky * texp * tel_surface * pix_size #sky photons per pixel
+	#Computing photons number
+	N_sig = (3631.0 * 1.51 * pow(10, 7) * pow(10,-0.4 * m) * in_r[i] * texp[i] * tel_surface) / n_pix #object photons per pixel
+	N_sky = in_sky[i] * texp[i] * tel_surface * pix_size #sky photons per pixel
 
 	#Computing Signal to Noise (StoN)
-	Signal = N_sig * n_pix * n_exp 
-	Noise =  np.sqrt(n_pix * n_exp * (N_sig + N_sky + RN * RN))	
-	StoN = Signal / Noise 
+	StoN = (sqrt(n_pix * n_exp) * N_sig) / sqrt(N_sig + N_sky + RN * RN)
 
 	#Translating from S/N to magnitude uncertainty
-	err_m_obs = 2.5 * np.log10(1 + 1 / StoN)
+	err_m_obs = 2.5 * log10(1 + 1 / StoN)
 
 	#Inserting extra noise to simulate calibration errors
 	noise_ctn = 2.5 * log10(1 + 0.02)
-	err_m_obs = np.sqrt((err_m_obs * err_m_obs) + (noise_ctn * noise_ctn))
+	err_m_obs = sqrt((err_m_obs * err_m_obs) + (noise_ctn * noise_ctn))
 
-	rn = np.random.normal(size = n_filt)
-	m_obs = m + rn * err_m_obs	
-
-	return m_obs, err_m_obs 
+	return err_m_obs 
 
 def noiseless_test():
 
@@ -52,24 +47,24 @@ def noiseless_test():
 	print "Ok"
 	return
 
-def noisy_test():
+def noisely_test():
 
 	print "\nNoisely test:"
 
-	f_noisy_test = open("noisy_test.cat", "r") 
-	f_noisy = open(f_noisy_file, "r") 
+	f_noisely_test = open("noisely_test.cat", "r") 
+	f_noisely = open(f_noisely_file, "r") 
 
-	for test in f_noisy_test:
+	for test in f_noisely_test:
 		test = np.array(test.split(), dtype = 'string')	
-		cat = np.array(f_noisy.readline().split(), dtype = 'string')
+		cat = np.array(f_noisely.readline().split(), dtype = 'string')
 		for i in range(2, len(test) - 2, 2):
 			if(test[i] != cat[i]):
 				print "Failed"
 				print "Test value %s is different from %s" % (test[i], cat[i])
 				return
 
-	f_noisy_test.close()
-	f_noisy.close()
+	f_noisely_test.close()
+	f_noisely.close()
 
 	print "Ok"
 	return
@@ -83,10 +78,14 @@ z = cat[2]
 t = cat[3]
 n_gal = len(m_ref)
 
+#Loading exposure times................
+#texp = np.loadtxt(texp_file, unpack = True)
+
 #Loading filters....................... 
 filt_list = np.loadtxt(filt_folder + filt_names_file, dtype = 'string', unpack = True)
 n_filt = len(filt_list)
 filt_list = np.hstack(([ref_filt], filt_list))
+#rn = np.random.normal(size = n_filt) #This is a TEST, don't use
 
 #Computing in_r.........................
 y_r = {}
@@ -106,8 +105,15 @@ for i in range(n_filt + 1):
 in_r0 = in_r[0]
 in_r = in_r[1:]
 
-#Noiseless........................................................
-#.................................................................
+#Computing in_sky.......................
+SKY = np.loadtxt(sky_file, unpack = True) 
+in_sky = np.zeros(n_filt + 1)
+for i in range(n_filt + 1):
+	filt = filt_list[i]
+	y_sky = sp.interpolate.interp1d(SKY[0], SKY[1])(x[filt])
+	in_sky[i] = (y_sky * y_r[filt]).sum() * dx
+
+in_sky = in_sky[1:]
 
 #Loading seds...........................
 sed_list = np.loadtxt(sed_folder + sed_list, dtype = 'string', unpack = True)
@@ -121,14 +127,16 @@ t_range = np.arange(0, 66)
 s = {}
 for sed in sed_list: s[sed] = np.loadtxt(sed_folder + sed, unpack = True)
 
-print "# galaxies =", n_gal
-
 f_noiseless = open(f_noiseless_file, "w") 
+f_noisely = open(f_noisely_file, "w") 
+
 #Iterating over all the galaxies
+print "# galaxies =", n_gal
 for n in range(n_gal):
 	sys.stdout.write("\r\tComplet: %2.2f%%" % (100 * float(n) / float(n_gal)))
 	sys.stdout.flush()
 	f_noiseless.write("%d " % id[n])
+	f_noisely.write("%d " % id[n])
 
 	s_ind_high = np.searchsorted(t_range, t[n])
 	s_high = sed_list[s_ind_high]
@@ -153,44 +161,22 @@ for n in range(n_gal):
 
 		#Computing true magnitudes
 		m = m_ref[n] + 2.5 * (log10(in_s0) + log10(in_r[i]) - log10(in_r0) - log10(in_s[i])) 
-		f_noiseless.write("%8.8f " % m)
+				
+		#Computing observed magnitudes: adding gaussian noise of sigma = err_m_obs
+		err_m_obs = err_magnitude()
+		rn = np.random.normal()
+		m_obs = m + rn * err_m_obs	
+		#m_obs = m + rn[i] * err_m_obs	
+
+		f_noiseless.write("%4.4f " % m)
+		f_noisely.write("%4.4f %4.4f " % (m_obs, err_m_obs))
 
 	f_noiseless.write("%4.4f %2.2f\n" % (z[n], t[n]))
+	f_noisely.write("%4.4f %2.2f\n" % (z[n], t[n]))
 
 f_noiseless.close()
-
-#Noisy.........................................................
-#Computing observed magnitudes: adding gaussian noise of sigma = err_m_obs
-#.................................................................
-
-#Loading exposure times................
-#texp = np.loadtxt(texp_file, unpack = True)
-
-#Computing in_sky
-SKY = np.loadtxt(sky_file, unpack = True) 
-in_sky = np.zeros(n_filt + 1)
-for i in range(n_filt + 1):
-	filt = filt_list[i]
-	y_sky = sp.interpolate.interp1d(SKY[0], SKY[1])(x[filt])
-	in_sky[i] = (y_sky * y_r[filt]).sum() * dx
-in_sky = in_sky[1:]
-
-f_noiseless = open(f_noiseless_file, "r") 
-f_noisy = open(f_noisy_file, "w") 
-#Iterating over all the galaxies
-for n in range(n_gal):
-
-	cat = np.array(f_noiseless.readline().split(), dtype = 'float')
-	m = np.delete(cat, (0, n_filt + 1, n_filt + 2))	
-	m_obs, err_m_obs = err_magnitude(m)
-	
-	f_noisy.write("%d " % id[n])
-	for i in range(n_filt): f_noisy.write("%4.4f %4.4f " % (m_obs[i], err_m_obs[i]))
-	f_noisy.write("%4.4f %2.2f\n" % (z[n], t[n]))
-
-f_noiseless.close()
-f_noisy.close()
+f_noisely.close()
 
 #Tests.................................
 noiseless_test()
-noisy_test()
+noisely_test()

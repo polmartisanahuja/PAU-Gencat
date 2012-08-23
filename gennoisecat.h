@@ -14,7 +14,7 @@
 
 //File paths
 char cat_in_file[1000] = "mock.r255.PAU.a010.s12.110521_reduced_noiseless_c.dat";
-char cat_out_file[1000] = "mock.r255.PAU.a010.s12.110521_reduced_noisely_c.dat";
+char cat_out_file[1000] = "mock.r255.PAU.a010.s12.110521_reduced_noisy_c.dat";
 char nom_filt_file[1000] = "./PAU_filt/PAU_filt_list.txt";
 char nom_filt_folder[1000] = "./PAU_filt/";
 char sky_file[1000] = "sky_spectrum.txt";
