@@ -1,8 +1,8 @@
 import numpy as np
-from parameters import *
+from pau_parameters import *
 
-tray_matrix = np.loadtxt(filt_folder + tray_matrix_file, dtype = 'string')
-filt_names = np.loadtxt(filt_folder + filt_names_file, dtype = 'string')
+tray_matrix = np.loadtxt(filt_path + tray_matrix_file, dtype = 'string')
+filt_folder, filt_names = np.loadtxt(filt_path + filt_names_file, dtype = 'string', unpack = True)
 
 n_tray = len(texp_tray)
 n_filt = len(filt_names)
@@ -23,4 +23,4 @@ for i in range(n_tray):
 	for j in range(16):
 		filt_list[tray_matrix[i][j]] += texp_matrix[i][j]
 for i in range(n_filt): texp[i] = filt_list[filt_names[i]]
-#np.savetxt(texp_file, texp, fmt = "%6.6f")
+np.savetxt(filt_path + texp_file, texp, fmt = "%6.6f")

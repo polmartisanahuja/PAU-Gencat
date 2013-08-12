@@ -3,8 +3,8 @@ import numpy as np
 from math import *
 import scipy as sp
 import scipy.interpolate
-from parameters import *
-from gen_texp import *
+from pau_parameters import *
+#from gen_texp import *
 
 #Functions.............................
 def err_magnitude(m):
@@ -75,7 +75,7 @@ def noisy_test():
 	return
 
 #Loading input catalog file.............
-cat = np.loadtxt(incat_file + incat_file_extention, usecols = (index_id, index_m, index_z, index_t), unpack = 'True')
+cat = np.loadtxt(cat_folder + incat_file + incat_file_extention, usecols = (index_id, index_m, index_z, index_t), unpack = 'True')
 
 id = cat[0]
 m_ref = cat[1]
@@ -84,8 +84,9 @@ t = cat[3]
 n_gal = len(m_ref)
 
 #Loading filters....................... 
-filt_list = np.loadtxt(filt_folder + filt_names_file, dtype = 'string', unpack = True)
+filt_folder, filt_list = np.loadtxt(filt_path + filt_names_file, dtype = 'string', unpack = True)
 n_filt = len(filt_list)
+filt_folder = np.hstack(([ref_filt_folder], filt_folder))
 filt_list = np.hstack(([ref_filt], filt_list))
 
 #Computing in_r.........................
@@ -93,8 +94,9 @@ y_r = {}
 x = {}
 in_r = np.zeros(n_filt + 1)
 for i in range(n_filt + 1): 
+	R = np.loadtxt(filt_path + filt_folder[i] + filt_list[i] + ".res", unpack = True)
+
 	filt = filt_list[i]
-	R = np.loadtxt(filt_folder + filt + ".res", unpack = True)
 
 	#Defining lambda range
 	x[filt] = np.arange(R[0].min(), R[0].max(), dx)
@@ -164,7 +166,7 @@ f_noiseless.close()
 #.................................................................
 
 #Loading exposure times................
-#texp = np.loadtxt(texp_file, unpack = True)
+texp = np.loadtxt(texp_file, unpack = True)
 
 #Computing in_sky
 SKY = np.loadtxt(sky_file, unpack = True) 
@@ -192,5 +194,5 @@ f_noiseless.close()
 f_noisy.close()
 
 #Tests.................................
-noiseless_test()
-noisy_test()
+#noiseless_test()
+#noisy_test()
